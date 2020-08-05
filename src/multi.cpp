@@ -302,8 +302,10 @@ int multi::socket(native::CURL* native_easy, native::curl_socket_t s, int what, 
 	{
 		// stop listening for events
 		socket_info_ptr* si = static_cast<socket_info_ptr*>(socketp);
-		self->monitor_socket(*si, CURL_POLL_NONE);
-		delete si;
+		if (si) {
+			self->monitor_socket(*si, CURL_POLL_NONE);
+			delete si;
+		}
 	}
 	else if (socketp)
 	{
@@ -316,11 +318,14 @@ int multi::socket(native::CURL* native_easy, native::curl_socket_t s, int what, 
 	{
 		// register the socket
 		socket_info_ptr si = self->get_socket_from_native(s);
-		if (!si)
-			throw std::invalid_argument("bad socket");
-		si->handle = easy::from_native(native_easy);
-		self->assign(s, new socket_info_ptr(si));
-		self->monitor_socket(si, what);
+		if (what != CURL_POLL_IN) {
+			if (!si)
+				throw std::invalid_argument("bad socket");
+			si->handle = easy::from_native(native_easy);
+			self->assign(s, new socket_info_ptr(si));
+			self->monitor_socket(si, what);
+		}
+		
 	}
 	else
 	{
