@@ -10,6 +10,7 @@
 #include <curl-asio/easy.h>
 #include <curl-asio/error_code.h>
 #include <curl-asio/multi.h>
+#include <boost/bind/bind.hpp>
 
 using namespace curl;
 
@@ -202,7 +203,7 @@ bool multi::still_running()
 void multi::start_read_op(socket_info_ptr si)
 {
 	si->pending_read_op = true;
-	si->socket->async_read_some(boost::asio::null_buffers(), boost::bind(&multi::handle_socket_read, this, boost::asio::placeholders::error, si));
+	si->socket->async_read_some(boost::asio::null_buffers(), boost::bind(&multi::handle_socket_read, this, boost::placeholders::_1, si));
 }
 
 void multi::handle_socket_read(const boost::system::error_code& err, socket_info_ptr si)
@@ -238,7 +239,7 @@ void multi::handle_socket_read(const boost::system::error_code& err, socket_info
 void multi::start_write_op(socket_info_ptr si)
 {
 	si->pending_write_op = true;
-	si->socket->async_write_some(boost::asio::null_buffers(), boost::bind(&multi::handle_socket_write, this, boost::asio::placeholders::error, si));
+	si->socket->async_write_some(boost::asio::null_buffers(), boost::bind(&multi::handle_socket_write, this, boost::placeholders::_1, si));
 }
 
 void multi::handle_socket_write(const boost::system::error_code& err, socket_info_ptr si)
@@ -342,7 +343,7 @@ int multi::timer(native::CURLM* native_multi, long timeout_ms, void* userp)
 	if (timeout_ms > 0)
 	{
 		self->timeout_.expires_from_now(boost::posix_time::millisec(timeout_ms));
-		self->timeout_.async_wait(boost::bind(&multi::handle_timeout, self, boost::asio::placeholders::error));
+		self->timeout_.async_wait(boost::bind(&multi::handle_timeout, self, boost::placeholders::_1));
 	}
 	else
 	{
